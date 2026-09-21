@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#111318" />
+  <title>StudyFlow</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>StudyFlow</h1>
+      <p>50/10 × 3 · Active Recall · Repaso espaciado</p>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard">Hoy</button>
+      <button class="nav-btn" data-view="timer">Sesión</button>
+      <button class="nav-btn" data-view="reviews">Repasos</button>
+      <button class="nav-btn" data-view="planner">Semana</button>
+      <button class="nav-btn" data-view="data">Datos</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section id="dashboard" class="view active">
+      <div class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <span class="eyebrow">HOY</span>
+              <h2>Qué toca</h2>
+            </div>
+            <button id="quickStart" class="primary">Iniciar sesión</button>
+          </div>
+          <div id="todayPlan"></div>
+        </article>
+
+        <article class="card">
+          <span class="eyebrow">REPASO</span>
+          <h2>Pendientes</h2>
+          <div id="dueSummary"></div>
+        </article>
+      </div>
+
+      <article class="card">
+        <span class="eyebrow">ÚLTIMAS SESIONES</span>
+        <h2>Historial reciente</h2>
+        <div id="recentSessions"></div>
+      </article>
+    </section>
+
+    <section id="timer" class="view">
+      <div class="grid timer-grid">
+        <article class="card timer-card">
+          <div class="timer-top">
+            <div>
+              <span id="sessionCycleLabel" class="eyebrow">BLOQUE 1 DE 3</span>
+              <h2 id="phaseTitle">Recall anterior</h2>
+              <p id="phaseHelp" class="muted">Sin mirar: recuperá lo que recordás del tema anterior.</p>
+            </div>
+            <div class="pill" id="phaseRange">0–5 min</div>
+          </div>
+
+          <div id="timerDisplay" class="timer-display">05:00</div>
+          <div class="progress"><div id="progressFill"></div></div>
+
+          <div class="timer-actions">
+            <button id="startPause" class="primary">▶ Iniciar</button>
+            <button id="nextPhase">Siguiente</button>
+            <button id="resetTimer">Reiniciar</button>
+            <button id="toggleSound">🔊 Sonido</button>
+          </div>
+
+          <div class="timeline" id="timeline"></div>
+        </article>
+
+        <article class="card">
+          <span class="eyebrow">SESIÓN ACTUAL</span>
+          <h2>Qué estás estudiando</h2>
+
+          <label>Materia
+            <select id="sessionSubject"></select>
+          </label>
+
+          <label>Tema
+            <input id="sessionTopic" type="text" placeholder="Ej: Deadlock y starvation" />
+          </label>
+
+          <label>Preguntas de active recall / IA
+            <textarea id="sessionQuestions" rows="6" placeholder="Pegá acá las preguntas que querés volver a intentar..."></textarea>
+          </label>
+
+          <label>Highlights / ideas clave
+            <textarea id="sessionHighlights" rows="5" placeholder="Qué aprendiste o qué querés conservar..."></textarea>
+          </label>
+
+          <label>Lo que más costó
+            <textarea id="sessionDifficulties" rows="5" placeholder="3–5 errores, dudas o puntos difíciles..."></textarea>
+          </label>
+
+          <div class="row">
+            <label class="grow">Sensación al terminar
+              <select id="sessionRating">
+                <option value="hard">Difícil</option>
+                <option value="ok" selected>Bien</option>
+                <option value="easy">Fácil</option>
+              </select>
+            </label>
+          </div>
+
+          <button id="saveSession" class="primary full">Guardar sesión y programar repasos</button>
+          <p class="tiny">Se guarda solo en este navegador usando localStorage.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="reviews" class="view">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">SPACED REPETITION</span>
+            <h2>Repasos pendientes</h2>
+          </div>
+          <div class="pill">D+1 · D+3 · D+7 · D+14 · D+30</div>
+        </div>
+        <div id="reviewList"></div>
+      </article>
+    </section>
+
+    <section id="planner" class="view">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <span class="eyebrow">PLAN SEMANAL</span>
+            <h2>Series de estudio</h2>
+          </div>
+          <button id="savePlanner" class="primary">Guardar semana</button>
+        </div>
+        <p class="muted">Una serie = 50/10 + 50/10 + 50. Escribí algo simple: “Concurrentes · Concurrentes · Redes”.</p>
+        <div id="weekPlanner" class="week-grid"></div>
+      </article>
+    </section>
+
+    <section id="data" class="view">
+      <div class="grid two">
+        <article class="card">
+          <span class="eyebrow">MATERIAS</span>
+          <h2>Configurar materias</h2>
+          <div id="subjectList"></div>
+          <div class="inline-form">
+            <input id="newSubject" placeholder="Nueva materia" />
+            <button id="addSubject">Agregar</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <span class="eyebrow">BACKUP</span>
+          <h2>Exportar / importar</h2>
+          <p class="muted">Como no hay backend, exportá un backup cada tanto. Así no dependés de un solo navegador.</p>
+          <div class="stack">
+            <button id="exportData" class="primary">Exportar JSON</button>
+            <label class="file-btn">Importar JSON
+              <input id="importData" type="file" accept="application/json" hidden />
+            </label>
+            <button id="clearData" class="danger">Borrar datos locales</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="reviewDialog">
+    <form method="dialog" class="dialog-card">
+      <button class="close" value="cancel">×</button>
+      <span class="eyebrow">REPASO</span>
+      <h2 id="reviewTitle"></h2>
+      <p id="reviewMeta" class="muted"></p>
+
+      <h3>Primero: respondé sin mirar</h3>
+      <pre id="reviewQuestions" class="review-box"></pre>
+
+      <details>
+        <summary>Mostrar highlights / apoyo</summary>
+        <pre id="reviewHighlights" class="review-box"></pre>
+      </details>
+
+      <details>
+        <summary>Mostrar lo que más costó</summary>
+        <pre id="reviewDifficulties" class="review-box"></pre>
+      </details>
+
+      <h3>¿Cómo salió?</h3>
+      <div class="rating-row">
+        <button type="button" data-review-rating="hard">😵 Difícil</button>
+        <button type="button" data-review-rating="ok">🙂 Bien</button>
+        <button type="button" data-review-rating="easy">😎 Fácil</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
