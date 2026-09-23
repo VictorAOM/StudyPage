@@ -87,6 +87,13 @@
             <input id="sessionTopic" type="text" placeholder="Ej: Deadlock y starvation" />
           </label>
 
+          <label>Tipo de sesión
+            <select id="sessionType">
+              <option value="nuevo" selected>Aprendiendo algo nuevo</option>
+              <option value="repaso">Ya aprendido (consolidación)</option>
+            </select>
+          </label>
+
           <label>Preguntas de active recall / IA
             <textarea id="sessionQuestions" rows="6" placeholder="Pegá acá las preguntas que querés volver a intentar..."></textarea>
           </label>
@@ -97,6 +104,17 @@
 
           <label>Lo que más costó
             <textarea id="sessionDifficulties" rows="5" placeholder="3–5 errores, dudas o puntos difíciles..."></textarea>
+          </label>
+
+          <span class="eyebrow">QUÉ VISTE EN CADA BLOQUE / HORA</span>
+          <label>Bloque 1
+            <input id="sessionBlock1" type="text" placeholder="Qué cubriste en la 1ª hora..." />
+          </label>
+          <label>Bloque 2
+            <input id="sessionBlock2" type="text" placeholder="Qué cubriste en la 2ª hora..." />
+          </label>
+          <label>Bloque 3
+            <input id="sessionBlock3" type="text" placeholder="Qué cubriste en la 3ª hora..." />
           </label>
 
           <div class="row">
@@ -179,6 +197,11 @@
 
       <h3>Primero: respondé sin mirar</h3>
       <pre id="reviewQuestions" class="review-box"></pre>
+
+      <details>
+        <summary>Mostrar qué viste por bloque</summary>
+        <pre id="reviewBlocks" class="review-box"></pre>
+      </details>
 
       <details>
         <summary>Mostrar highlights / apoyo</summary>

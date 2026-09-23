@@ -1,6 +1,9 @@
 
 const KEY = "studyflow-v1";
 const REVIEW_INTERVALS = [1,3,7,14,30];
+const REFRESH_INTERVALS = [3,7,21];
+function intervalsFor(type){return type==="repaso" ? REFRESH_INTERVALS : REVIEW_INTERVALS}
+function typeLabel(type){return type==="repaso" ? "Ya aprendido" : "Aprendiendo algo nuevo"}
 const DAYS = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"];
 
 const DEFAULT_STATE = {
@@ -90,12 +93,14 @@ function renderSubjectSelect(){
 }
 
 function sessionCard(s){
+  const blocks=(s.blocks||[]).map((b,i)=>b&&b.trim()).filter(Boolean);
   return `<div class="item">
     <div class="item-top">
       <div><h3>${escapeHtml(s.subject)} · ${escapeHtml(s.topic||"Sin tema")}</h3>
-      <p>${prettyDate(s.date)} · ${ratingLabel(s.rating)}</p></div>
+      <p>${prettyDate(s.date)} · ${ratingLabel(s.rating)} · ${typeLabel(s.type)}</p></div>
       <span class="tag">${s.reviewId ? "repasos activos" : "sin repaso"}</span>
     </div>
+    ${blocks.length?`<p><b>Por bloque:</b> ${escapeHtml(blocks.map((b,i)=>`${i+1}· ${shorten(b,40)}`).join(" · "))}</p>`:""}
     ${s.difficulties?`<p><b>Costó:</b> ${escapeHtml(shorten(s.difficulties,150))}</p>`:""}
   </div>`;
 }
@@ -104,7 +109,7 @@ function reviewCard(r, compact=false){
   return `<div class="item">
     <div class="item-top">
       <div><h3>${escapeHtml(r.subject)} · ${escapeHtml(r.topic||"Sin tema")}</h3>
-      <p>Repaso ${r.stage+1}/${REVIEW_INTERVALS.length} · vence ${prettyDate(r.nextDue)}</p></div>
+      <p>${typeLabel(r.type)} · Repaso ${r.stage+1}/${intervalsFor(r.type).length} · vence ${prettyDate(r.nextDue)}</p></div>
       <span class="tag">${r.nextDue < isoDate() ? "vencido" : "hoy"}</span>
     </div>
     ${!compact && r.difficulties ? `<p><b>Enfócate en:</b> ${escapeHtml(shorten(r.difficulties,170))}</p>`:""}
@@ -137,8 +142,9 @@ function openReview(id){
   const r=state.reviews.find(x=>x.id===id); if(!r)return;
   activeReviewId=id;
   document.getElementById("reviewTitle").textContent=`${r.subject} · ${r.topic||"Sin tema"}`;
-  document.getElementById("reviewMeta").textContent=`Repaso ${r.stage+1}/${REVIEW_INTERVALS.length} · programado para ${prettyDate(r.nextDue)}`;
+  document.getElementById("reviewMeta").textContent=`${typeLabel(r.type)} · Repaso ${r.stage+1}/${intervalsFor(r.type).length} · programado para ${prettyDate(r.nextDue)}`;
   document.getElementById("reviewQuestions").textContent=r.questions||"No guardaste preguntas. Intentá explicar el tema completo sin mirar.";
+  document.getElementById("reviewBlocks").textContent=formatBlocks(r.blocks);
   document.getElementById("reviewHighlights").textContent=r.highlights||"Sin highlights guardados.";
   document.getElementById("reviewDifficulties").textContent=r.difficulties||"Sin dificultades guardadas.";
   document.getElementById("reviewDialog").showModal();
@@ -149,6 +155,7 @@ document.querySelectorAll("[data-review-rating]").forEach(btn=>{
 function completeReview(rating){
   const r=state.reviews.find(x=>x.id===activeReviewId); if(!r)return;
   const today=isoDate();
+  const intervals=intervalsFor(r.type);
 
   if(rating==="hard"){
     r.nextDue=addDays(today,1); // no avanza etapa
@@ -156,10 +163,10 @@ function completeReview(rating){
   }else{
     r.stage += rating==="easy" ? 2 : 1;
     r.lastRating=rating;
-    if(r.stage>=REVIEW_INTERVALS.length){
+    if(r.stage>=intervals.length){
       r.done=true;
     }else{
-      r.nextDue=addDays(today, REVIEW_INTERVALS[r.stage]);
+      r.nextDue=addDays(today, intervals[r.stage]);
     }
   }
   r.history = r.history || [];
@@ -170,6 +177,11 @@ function completeReview(rating){
 }
 
 function ratingLabel(r){return r==="hard"?"Difícil":r==="easy"?"Fácil":"Bien"}
+function formatBlocks(blocks=[]){
+  const filled=blocks.map((b,i)=>b&&b.trim()).filter(Boolean);
+  if(!filled.length) return "No registraste qué viste por bloque.";
+  return blocks.map((b,i)=>`Bloque ${i+1} (${i===0?"1ª hora":i===1?"2ª hora":"3ª hora"}): ${b&&b.trim()||"—"}`).join("\n");
+}
 function shorten(t,n){return t.length>n?t.slice(0,n)+"…":t}
 function escapeHtml(s=""){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 
@@ -272,29 +284,33 @@ function resetTimer(){
 document.getElementById("saveSession").onclick=()=>{
   const subject=document.getElementById("sessionSubject").value;
   const topic=document.getElementById("sessionTopic").value.trim();
+  const type=document.getElementById("sessionType").value;
   const questions=document.getElementById("sessionQuestions").value.trim();
   const highlights=document.getElementById("sessionHighlights").value.trim();
   const difficulties=document.getElementById("sessionDifficulties").value.trim();
+  const blocks=[1,2,3].map(n=>document.getElementById(`sessionBlock${n}`).value.trim());
   const rating=document.getElementById("sessionRating").value;
   if(!subject || !topic){alert("Elegí una materia y escribí el tema.");return}
 
   const date=isoDate();
   const reviewId=uid();
   const review={
-    id:reviewId,subject,topic,questions,highlights,difficulties,
-    createdAt:new Date().toISOString(),stage:0,nextDue:addDays(date,1),
+    id:reviewId,subject,topic,type,questions,highlights,difficulties,blocks,
+    createdAt:new Date().toISOString(),stage:0,nextDue:addDays(date,intervalsFor(type)[0]),
     done:false,history:[]
   };
   const session={
-    id:uid(),subject,topic,questions,highlights,difficulties,rating,date,
+    id:uid(),subject,topic,type,questions,highlights,difficulties,blocks,rating,date,
     createdAt:new Date().toISOString(),reviewId
   };
   state.sessions.push(session);
   state.reviews.push(review);
   saveState();
 
-  ["sessionTopic","sessionQuestions","sessionHighlights","sessionDifficulties"].forEach(id=>document.getElementById(id).value="");
-  alert("Sesión guardada. Primer repaso programado para mañana.");
+  ["sessionTopic","sessionQuestions","sessionHighlights","sessionDifficulties","sessionBlock1","sessionBlock2","sessionBlock3"].forEach(id=>document.getElementById(id).value="");
+  alert(type==="repaso"
+    ? "Sesión guardada. Primer repaso de consolidación programado en 3 días."
+    : "Sesión guardada. Primer repaso programado para mañana.");
   renderDashboard();
 };
 
